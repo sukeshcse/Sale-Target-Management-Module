@@ -38,6 +38,11 @@ enum LineStatus {
   NoTargetSet
 }
 
+enum ImportStatus {
+  Success
+  Failed
+}
+
 model SalesTargetPlan {
   id            String        @id @default(cuid())
   name          String
@@ -49,7 +54,8 @@ model SalesTargetPlan {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  lines SalesTargetLine[]
+  lines      SalesTargetLine[]
+  importLogs TargetImportLog[]
 
   @@unique([name, dimensionType, startDate, endDate])
   @@index([status])
@@ -81,4 +87,22 @@ model SalesTargetLine {
   @@unique([planId, dimensionId, periodLabel])
   @@index([planId])
   @@index([status])
+}
+
+model TargetImportLog {
+  id     String          @id @default(cuid())
+  planId String
+  plan   SalesTargetPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  fileName     String
+  status       ImportStatus
+  totalRows    Int
+  importedRows Int
+  failedRows   Int
+  // Row-by-row report: [{ row: number, errors: string[] }]
+  errors       Json
+
+  createdAt DateTime @default(now())
+
+  @@index([planId])
 }
