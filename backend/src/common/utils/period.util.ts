@@ -82,3 +82,13 @@ export function validatePeriodTypeSpan(periodType: PeriodType, startDate: Date, 
 export function isPeriodWithinRange(periodStart: Date, periodEnd: Date, rangeStart: Date, rangeEnd: Date): boolean {
   return periodStart.getTime() >= rangeStart.getTime() && periodEnd.getTime() <= rangeEnd.getTime();
 }
+
+/**
+ * A plan's endDate is a calendar day ("2024-03-31" means "through the end of March 31st"),
+ * but Date parsing of a bare ISO date string yields UTC midnight. Without normalizing to the
+ * end of that day, a period ending later that same day (e.g. a Monthly period's
+ * 2024-03-31T23:59:59.999Z bound) would incorrectly compare as past the range end.
+ */
+export function endOfUtcDay(date: Date): Date {
+  return dayjs.utc(date).endOf('day').toDate();
+}

@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LineStatus, Prisma } from '@prisma/client';
-import { validatePeriodTypeSpan } from '../common/utils/period.util';
+import { endOfUtcDay, validatePeriodTypeSpan } from '../common/utils/period.util';
 import { CreateTargetPlanDto } from './dto/create-target-plan.dto';
 import { UpdateTargetPlanDto } from './dto/update-target-plan.dto';
 import { QueryTargetPlansDto } from './dto/query-target-plans.dto';
@@ -14,7 +14,7 @@ export class TargetPlansService {
 
   async create(dto: CreateTargetPlanDto) {
     const startDate = new Date(dto.startDate);
-    const endDate = new Date(dto.endDate);
+    const endDate = endOfUtcDay(new Date(dto.endDate));
 
     if (startDate.getTime() >= endDate.getTime()) {
       throw new BadRequestException('startDate must be before endDate');
@@ -55,7 +55,7 @@ export class TargetPlansService {
       periodType: query.periodType,
     };
     if (query.fromDate) where.startDate = { gte: new Date(query.fromDate) };
-    if (query.toDate) where.endDate = { ...(where.endDate as object), lte: new Date(query.toDate) };
+    if (query.toDate) where.endDate = { ...(where.endDate as object), lte: endOfUtcDay(new Date(query.toDate)) };
 
     const [items, total] = await this.prisma.$transaction([
       this.prisma.salesTargetPlan.findMany({
@@ -114,7 +114,7 @@ export class TargetPlansService {
     }
 
     const startDate = dto.startDate ? new Date(dto.startDate) : plan.startDate;
-    const endDate = dto.endDate ? new Date(dto.endDate) : plan.endDate;
+    const endDate = dto.endDate ? endOfUtcDay(new Date(dto.endDate)) : plan.endDate;
     const periodType = dto.periodType ?? plan.periodType;
 
     if (startDate.getTime() >= endDate.getTime()) {
