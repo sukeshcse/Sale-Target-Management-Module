@@ -3,6 +3,8 @@
 import { useRef, useState, type DragEvent } from 'react';
 import { apiPostForm } from '@/lib/api';
 import type { ImportPreviewResult, ImportRunResult } from '@/lib/import-types';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 type Stage = 'idle' | 'previewing' | 'preview' | 'confirming' | 'result';
 
@@ -65,8 +67,8 @@ export function ImportUploader({ planId, onImported }: { planId: string; onImpor
   }
 
   return (
-    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-6">
-      <h2 className="text-lg font-semibold mb-4">Import Target Values (XLSX)</h2>
+    <Card className="p-6">
+      <h2 className="text-lg font-semibold tracking-tight mb-4">Import Target Values (XLSX)</h2>
 
       {(stage === 'idle' || stage === 'previewing') && (
         <div
@@ -77,8 +79,10 @@ export function ImportUploader({ planId, onImported }: { planId: string; onImpor
           onDragLeave={() => setDragOver(false)}
           onDrop={onDrop}
           onClick={() => inputRef.current?.click()}
-          className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center text-sm ${
-            dragOver ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30' : 'border-zinc-300 dark:border-zinc-700'
+          className={`cursor-pointer rounded-xl border-2 border-dashed p-10 text-center transition-colors ${
+            dragOver
+              ? 'border-primary bg-indigo-50 dark:bg-indigo-500/10'
+              : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600'
           }`}
         >
           <input
@@ -91,71 +95,80 @@ export function ImportUploader({ planId, onImported }: { planId: string; onImpor
               if (selected) handleFile(selected);
             }}
           />
-          {stage === 'previewing' ? (
-            <p className="text-zinc-500">Parsing {file?.name}…</p>
-          ) : (
-            <p className="text-zinc-500">Drag and drop an .xlsx file here, or click to browse</p>
-          )}
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-400">
+              <UploadIcon />
+            </div>
+            {stage === 'previewing' ? (
+              <p className="text-sm text-zinc-500">Parsing {file?.name}…</p>
+            ) : (
+              <>
+                <p className="text-sm text-zinc-600 dark:text-zinc-300">
+                  <span className="font-medium text-primary">Click to browse</span> or drag and drop an .xlsx file
+                </p>
+                <p className="text-xs text-zinc-400">Period, DimensionCode, DimensionName, TargetValue columns expected</p>
+              </>
+            )}
+          </div>
         </div>
       )}
 
-      {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
+      {error && (
+        <p className="text-sm text-rose-600 bg-rose-50 dark:bg-rose-500/10 rounded-lg px-3 py-2 mt-3">{error}</p>
+      )}
 
       {preview && (stage === 'preview' || stage === 'confirming') && (
         <div className="mt-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm text-zinc-500">
-              {file?.name} — {preview.totalRows} row{preview.totalRows === 1 ? '' : 's'} parsed
-              {preview.hasErrors ? ', errors found' : ', all valid'}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              <span className="font-medium text-zinc-700 dark:text-zinc-300">{file?.name}</span> — {preview.totalRows} row
+              {preview.totalRows === 1 ? '' : 's'} parsed, {preview.hasErrors ? 'errors found' : 'all valid'}
             </p>
             <div className="flex gap-2">
-              <button onClick={reset} className="rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm">
+              <Button variant="secondary" size="sm" onClick={reset}>
                 Cancel
-              </button>
-              <button
-                onClick={handleConfirm}
-                disabled={stage === 'confirming'}
-                className={`rounded-md px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50 ${
-                  preview.hasErrors ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
+              </Button>
+              <Button variant={preview.hasErrors ? 'danger' : 'primary'} size="sm" onClick={handleConfirm} disabled={stage === 'confirming'}>
                 {stage === 'confirming' ? 'Importing…' : preview.hasErrors ? 'Confirm Anyway (will fail)' : 'Confirm Import'}
-              </button>
+              </Button>
             </div>
           </div>
 
           {preview.hasErrors && (
-            <p className="text-sm text-red-600 mb-3">
+            <p className="text-sm text-rose-600 bg-rose-50 dark:bg-rose-500/10 rounded-lg px-3 py-2 mb-3">
               This file has row errors — the import is all-or-nothing, so confirming now will save nothing and show you
               the same errors as a rejected-import report. Fix the rows below and re-upload, or confirm anyway to see
               that report.
             </p>
           )}
 
-          <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800 max-h-96 overflow-y-auto">
+          <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 max-h-96 overflow-auto">
             <table className="w-full text-sm">
-              <thead className="bg-zinc-50 dark:bg-zinc-900 text-left text-zinc-500 sticky top-0">
+              <thead className="bg-zinc-50 dark:bg-zinc-950/40 text-left sticky top-0">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Row</th>
-                  <th className="px-3 py-2 font-medium">Period</th>
-                  <th className="px-3 py-2 font-medium">DimensionCode</th>
-                  <th className="px-3 py-2 font-medium">DimensionName</th>
-                  <th className="px-3 py-2 font-medium text-right">TargetValue</th>
-                  <th className="px-3 py-2 font-medium">Errors</th>
+                  {['Row', 'Period', 'DimensionCode', 'DimensionName'].map((h) => (
+                    <th key={h} className="px-3.5 py-2.5 font-medium text-xs uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                      {h}
+                    </th>
+                  ))}
+                  <th className="px-3.5 py-2.5 font-medium text-xs uppercase tracking-wide text-zinc-400 dark:text-zinc-500 text-right">
+                    TargetValue
+                  </th>
+                  <th className="px-3.5 py-2.5 font-medium text-xs uppercase tracking-wide text-zinc-400 dark:text-zinc-500">Errors</th>
                 </tr>
               </thead>
               <tbody>
                 {preview.rows.map((row) => (
                   <tr
                     key={row.row}
-                    className={`border-t border-zinc-100 dark:border-zinc-800 ${row.errors.length > 0 ? 'bg-red-50 dark:bg-red-950/20' : ''}`}
+                    className={`border-t border-zinc-100 dark:border-zinc-800 ${row.errors.length > 0 ? 'bg-rose-50/70 dark:bg-rose-500/[0.06]' : ''}`}
                   >
-                    <td className="px-3 py-2">{row.row}</td>
-                    <td className="px-3 py-2">{row.period}</td>
-                    <td className="px-3 py-2">{row.dimensionCode}</td>
-                    <td className="px-3 py-2">{row.dimensionName}</td>
-                    <td className="px-3 py-2 text-right">{row.targetValue?.toLocaleString() ?? '—'}</td>
-                    <td className="px-3 py-2 text-red-600 text-xs">{row.errors.join('; ')}</td>
+                    <td className="px-3.5 py-2.5 tabular-nums text-zinc-500">{row.row}</td>
+                    <td className="px-3.5 py-2.5">{row.period}</td>
+                    <td className="px-3.5 py-2.5">{row.dimensionCode}</td>
+                    <td className="px-3.5 py-2.5">{row.dimensionName}</td>
+                    <td className="px-3.5 py-2.5 text-right tabular-nums">{row.targetValue?.toLocaleString() ?? '—'}</td>
+                    <td className="px-3.5 py-2.5 text-rose-600 dark:text-rose-400 text-xs">{row.errors.join('; ')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -166,20 +179,26 @@ export function ImportUploader({ planId, onImported }: { planId: string; onImpor
 
       {result && stage === 'result' && (
         <div className="mt-4">
-          <div className={`rounded-md p-4 text-sm ${result.status === 'Success' ? 'bg-green-50 dark:bg-green-950/30' : 'bg-red-50 dark:bg-red-950/30'}`}>
-            <p className="font-medium mb-2">{result.status === 'Success' ? 'Import succeeded' : 'Import failed'}</p>
-            <p>
+          <div
+            className={`rounded-xl p-4 text-sm ${
+              result.status === 'Success'
+                ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-900 dark:text-emerald-200'
+                : 'bg-rose-50 dark:bg-rose-500/10 text-rose-900 dark:text-rose-200'
+            }`}
+          >
+            <p className="font-medium mb-1.5">{result.status === 'Success' ? 'Import succeeded' : 'Import failed'}</p>
+            <p className="opacity-90">
               {result.totalRows} row{result.totalRows === 1 ? '' : 's'} total · {result.importedRows} imported ·{' '}
               {result.totalRows - result.importedRows - result.failedRows} skipped · {result.failedRows} failed
             </p>
             {result.status === 'Failed' && result.failedRows < result.totalRows && (
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-1 text-xs opacity-75">
                 Skipped rows were individually valid but weren&apos;t saved — the import is all-or-nothing, so nothing
                 persists until every row passes.
               </p>
             )}
             {result.errors.length > 0 && (
-              <ul className="mt-2 list-disc list-inside text-red-600">
+              <ul className="mt-2 list-disc list-inside space-y-0.5">
                 {result.errors.map((e) => (
                   <li key={e.row}>
                     Row {e.row}: {e.errors.join('; ')}
@@ -188,11 +207,25 @@ export function ImportUploader({ planId, onImported }: { planId: string; onImpor
               </ul>
             )}
           </div>
-          <button onClick={reset} className="mt-3 rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm">
+          <Button variant="secondary" size="sm" onClick={reset} className="mt-3">
             Import Another File
-          </button>
+          </Button>
         </div>
       )}
-    </div>
+    </Card>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

@@ -8,6 +8,9 @@ import { StatusBadge } from '@/components/status-badge';
 import { ImportUploader } from '@/components/import-uploader';
 import { SummaryDashboard } from '@/components/summary-dashboard';
 import { ProgressBar } from '@/components/progress-bar';
+import { Card } from '@/components/ui/card';
+import { Button, buttonClasses } from '@/components/ui/button';
+import { Select } from '@/components/ui/form';
 
 export function PlanDetailClient({ planId }: { planId: string }) {
   const [plan, setPlan] = useState<TargetPlanDetail | null>(null);
@@ -60,53 +63,57 @@ export function PlanDetailClient({ planId }: { planId: string }) {
     return statusFilter ? plan.lines.filter((line) => line.status === statusFilter) : plan.lines;
   }, [plan, statusFilter]);
 
-  if (loading && !plan) return <div className="p-8 text-sm text-zinc-500">Loading…</div>;
-  if (!plan) return <div className="p-8 text-sm text-red-600">{error ?? 'Plan not found'}</div>;
+  if (loading && !plan) {
+    return (
+      <div className="mx-auto max-w-6xl w-full p-6 sm:p-8">
+        <div className="h-9 w-80 rounded-lg bg-zinc-100 dark:bg-zinc-800 animate-pulse mb-8" />
+        <div className="h-24 rounded-2xl bg-zinc-100 dark:bg-zinc-800 animate-pulse mb-5" />
+        <div className="h-96 rounded-2xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+      </div>
+    );
+  }
+  if (!plan) return <div className="p-8 text-sm text-rose-600">{error ?? 'Plan not found'}</div>;
 
   return (
-    <div className="mx-auto max-w-6xl w-full p-8">
-      <Link href="/plans" className="text-sm text-zinc-500 hover:underline">
+    <div className="mx-auto max-w-6xl w-full p-6 sm:p-8">
+      <Link href="/plans" className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
         ← Back to plans
       </Link>
 
-      <div className="flex items-start justify-between mt-2 mb-6">
+      <div className="flex flex-wrap items-start justify-between gap-4 mt-3 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold">{plan.name}</h1>
-          <p className="text-sm text-zinc-500 mt-1">
-            {plan.dimensionType} · {plan.periodType} · {plan.startDate.slice(0, 10)} → {plan.endDate.slice(0, 10)}
+          <h1 className="text-2xl font-semibold tracking-tight">{plan.name}</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1.5">
+            {plan.dimensionType} <span className="text-zinc-300 dark:text-zinc-700">·</span> {plan.periodType}{' '}
+            <span className="text-zinc-300 dark:text-zinc-700">·</span> {plan.startDate.slice(0, 10)} → {plan.endDate.slice(0, 10)}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <StatusBadge status={plan.status} />
           {plan.status === 'Draft' && (
-            <Link
-              href={`/plans/${planId}/edit`}
-              className="rounded-md border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-900"
-            >
+            <Link href={`/plans/${planId}/edit`} className={buttonClasses('secondary', 'md')}>
               Edit
             </Link>
           )}
-          <button
-            onClick={handleRecalculate}
-            disabled={recalculating || plan.lines.length === 0}
-            className="rounded-md border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium hover:bg-zinc-50 dark:hover:bg-zinc-900 disabled:opacity-50"
-          >
+          <Button variant="secondary" onClick={handleRecalculate} disabled={recalculating || plan.lines.length === 0}>
             {recalculating ? 'Recalculating…' : 'Recalculate'}
-          </button>
+          </Button>
           {plan.status === 'Draft' && (
-            <button
+            <Button
+              variant="primary"
               onClick={handleActivate}
               disabled={activating || plan.lines.length === 0}
               title={plan.lines.length === 0 ? 'Import target lines before activating' : undefined}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
               {activating ? 'Activating…' : 'Activate Plan'}
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
-      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+      {error && (
+        <p className="text-sm text-rose-600 bg-rose-50 dark:bg-rose-500/10 rounded-lg px-3 py-2 mb-5">{error}</p>
+      )}
 
       <SummaryDashboard summary={plan.summary} />
 
@@ -115,60 +122,76 @@ export function PlanDetailClient({ planId }: { planId: string }) {
       </div>
 
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold">Target Lines</h2>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as LineStatus | '')}
-          className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-1.5 text-sm"
-        >
+        <h2 className="text-lg font-semibold tracking-tight">Target Lines</h2>
+        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as LineStatus | '')} className="min-w-36">
           <option value="">All statuses</option>
           {LINE_STATUSES.map((s) => (
             <option key={s} value={s}>
               {s}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 dark:bg-zinc-900 text-left text-zinc-500">
-            <tr>
-              <th className="px-4 py-3 font-medium">Period</th>
-              <th className="px-4 py-3 font-medium">Dimension</th>
-              <th className="px-4 py-3 font-medium text-right">Target</th>
-              <th className="px-4 py-3 font-medium text-right">Actual</th>
-              <th className="px-4 py-3 font-medium w-48">Achievement</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredLines.map((line) => (
-              <tr key={line.id} className="border-t border-zinc-100 dark:border-zinc-800">
-                <td className="px-4 py-3">{line.periodLabel}</td>
-                <td className="px-4 py-3">{line.dimensionName}</td>
-                <td className="px-4 py-3 text-right">{line.targetValue.toLocaleString()}</td>
-                <td className="px-4 py-3 text-right">{line.actualValue.toLocaleString()}</td>
-                <td className="px-4 py-3">
-                  {line.status === 'NoTargetSet' ? <span className="text-zinc-400">—</span> : <ProgressBar pct={line.achievementPct} />}
-                </td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={line.status} />
-                </td>
-              </tr>
-            ))}
-            {filteredLines.length === 0 && (
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-zinc-50 dark:bg-zinc-950/40 text-left">
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-zinc-500">
-                  {plan.lines.length === 0
-                    ? 'No target lines yet. Import an XLSX file to populate targets for this plan.'
-                    : 'No lines match this status filter.'}
-                </td>
+                {['Period', 'Dimension'].map((h) => (
+                  <th key={h} className="px-5 py-3 font-medium text-xs uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                    {h}
+                  </th>
+                ))}
+                <th className="px-5 py-3 font-medium text-xs uppercase tracking-wide text-zinc-400 dark:text-zinc-500 text-right">
+                  Target
+                </th>
+                <th className="px-5 py-3 font-medium text-xs uppercase tracking-wide text-zinc-400 dark:text-zinc-500 text-right">
+                  Actual
+                </th>
+                <th className="px-5 py-3 font-medium text-xs uppercase tracking-wide text-zinc-400 dark:text-zinc-500 w-48">
+                  Achievement
+                </th>
+                <th className="px-5 py-3 font-medium text-xs uppercase tracking-wide text-zinc-400 dark:text-zinc-500">Status</th>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredLines.map((line) => (
+                <tr
+                  key={line.id}
+                  className="border-t border-zinc-100 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800/40 transition-colors"
+                >
+                  <td className="px-5 py-3.5 font-medium text-zinc-700 dark:text-zinc-300">{line.periodLabel}</td>
+                  <td className="px-5 py-3.5 text-zinc-600 dark:text-zinc-400">{line.dimensionName}</td>
+                  <td className="px-5 py-3.5 text-right tabular-nums text-zinc-600 dark:text-zinc-400">
+                    {line.targetValue.toLocaleString()}
+                  </td>
+                  <td className="px-5 py-3.5 text-right tabular-nums text-zinc-600 dark:text-zinc-400">
+                    {line.actualValue.toLocaleString()}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    {line.status === 'NoTargetSet' ? (
+                      <span className="text-zinc-400">—</span>
+                    ) : (
+                      <ProgressBar pct={line.achievementPct} />
+                    )}
+                  </td>
+                  <td className="px-5 py-3.5">
+                    <StatusBadge status={line.status} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filteredLines.length === 0 && (
+            <div className="py-16 text-center text-sm text-zinc-500">
+              {plan.lines.length === 0
+                ? 'No target lines yet. Import an XLSX file below to populate targets for this plan.'
+                : 'No lines match this status filter.'}
+            </div>
+          )}
+        </div>
+      </Card>
     </div>
   );
 }

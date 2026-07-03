@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type FormEvent } from 'react';
 import { apiGet, apiPatch } from '@/lib/api';
 import { DIMENSION_TYPES, PERIOD_TYPES, type DimensionType, type PeriodType, type TargetPlanDetail } from '@/lib/types';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Field, Input, Select } from '@/components/ui/form';
 
 export function PlanEditClient({ planId }: { planId: string }) {
   const router = useRouter();
@@ -34,18 +37,26 @@ export function PlanEditClient({ planId }: { planId: string }) {
       .finally(() => setLoading(false));
   }, [planId]);
 
-  if (loading) return <div className="p-8 text-sm text-zinc-500">Loading…</div>;
-  if (loadError || !plan) return <div className="p-8 text-sm text-red-600">{loadError ?? 'Plan not found'}</div>;
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-xl w-full p-6 sm:p-8">
+        <div className="h-64 rounded-2xl bg-zinc-100 dark:bg-zinc-800 animate-pulse" />
+      </div>
+    );
+  }
+  if (loadError || !plan) return <div className="p-8 text-sm text-rose-600">{loadError ?? 'Plan not found'}</div>;
 
   const datesLocked = plan.lines.length > 0;
 
   if (plan.status !== 'Draft') {
     return (
-      <div className="mx-auto max-w-xl w-full p-8">
-        <Link href={`/plans/${planId}`} className="text-sm text-zinc-500 hover:underline">
+      <div className="mx-auto max-w-xl w-full p-6 sm:p-8">
+        <Link href={`/plans/${planId}`} className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300">
           ← Back to plan
         </Link>
-        <p className="mt-4 text-sm text-red-600">Only Draft plans can be edited — this plan is {plan.status}.</p>
+        <p className="mt-4 text-sm text-rose-600 bg-rose-50 dark:bg-rose-500/10 rounded-lg px-3 py-2">
+          Only Draft plans can be edited — this plan is {plan.status}.
+        </p>
       </div>
     );
   }
@@ -70,95 +81,64 @@ export function PlanEditClient({ planId }: { planId: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-xl w-full p-8">
-      <Link href={`/plans/${planId}`} className="text-sm text-zinc-500 hover:underline">
+    <div className="mx-auto max-w-xl w-full p-6 sm:p-8">
+      <Link href={`/plans/${planId}`} className="text-sm text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
         ← Back to plan
       </Link>
-      <h1 className="text-2xl font-semibold mt-2 mb-6">Edit Sales Target Plan</h1>
+      <h1 className="text-2xl font-semibold tracking-tight mt-3 mb-6">Edit Sales Target Plan</h1>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Plan name</span>
-          <input
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
-          />
-        </label>
+      <Card className="p-6">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <Field label="Plan name">
+            <Input required value={name} onChange={(e) => setName(e.target.value)} />
+          </Field>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Dimension type</span>
-          <select
-            value={dimensionType}
-            onChange={(e) => setDimensionType(e.target.value as DimensionType)}
-            className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
-          >
-            {DIMENSION_TYPES.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </label>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Dimension type">
+              <Select value={dimensionType} onChange={(e) => setDimensionType(e.target.value as DimensionType)}>
+                {DIMENSION_TYPES.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Period type">
+              <Select value={periodType} onChange={(e) => setPeriodType(e.target.value as PeriodType)}>
+                {PERIOD_TYPES.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </div>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium">Period type</span>
-          <select
-            value={periodType}
-            onChange={(e) => setPeriodType(e.target.value as PeriodType)}
-            className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2"
-          >
-            {PERIOD_TYPES.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </label>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Start date">
+              <Input required type="date" value={startDate} disabled={datesLocked} onChange={(e) => setStartDate(e.target.value)} />
+            </Field>
+            <Field label="End date">
+              <Input required type="date" value={endDate} disabled={datesLocked} onChange={(e) => setEndDate(e.target.value)} />
+            </Field>
+          </div>
 
-        <div className="flex gap-4">
-          <label className="flex flex-col gap-1 flex-1">
-            <span className="text-sm font-medium">Start date</span>
-            <input
-              required
-              type="date"
-              value={startDate}
-              disabled={datesLocked}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2 disabled:opacity-50"
-            />
-          </label>
-          <label className="flex flex-col gap-1 flex-1">
-            <span className="text-sm font-medium">End date</span>
-            <input
-              required
-              type="date"
-              value={endDate}
-              disabled={datesLocked}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="rounded-md border border-zinc-300 dark:border-zinc-700 bg-transparent px-3 py-2 disabled:opacity-50"
-            />
-          </label>
-        </div>
+          {datesLocked && (
+            <p className="text-xs text-zinc-500 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg px-3 py-2">
+              The date range can&apos;t be changed because this plan already has {plan.lines.length} target line
+              {plan.lines.length === 1 ? '' : 's'} attached.
+            </p>
+          )}
 
-        {datesLocked && (
-          <p className="text-xs text-zinc-500">
-            The date range can&apos;t be changed because this plan already has {plan.lines.length} target line
-            {plan.lines.length === 1 ? '' : 's'} attached.
-          </p>
-        )}
+          {error && (
+            <p className="text-sm text-rose-600 bg-rose-50 dark:bg-rose-500/10 rounded-lg px-3 py-2">{error}</p>
+          )}
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="mt-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {submitting ? 'Saving…' : 'Save Changes'}
-        </button>
-      </form>
+          <Button type="submit" variant="primary" disabled={submitting} className="mt-1 w-full">
+            {submitting ? 'Saving…' : 'Save Changes'}
+          </Button>
+        </form>
+      </Card>
     </div>
   );
 }
