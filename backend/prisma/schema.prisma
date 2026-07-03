@@ -1,0 +1,84 @@
+// Prisma schema for the Sales Target Management Module.
+// Models are added incrementally, task by task, matching the assignment structure:
+//   Task 1 -> SalesTargetPlan, SalesTargetLine
+//   Task 2 -> TargetImportLog
+//   Task 3 -> SalesActual
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum DimensionType {
+  Product
+  Store
+  Salesman
+  BusinessUnit
+  Region
+}
+
+enum PeriodType {
+  Weekly
+  Monthly
+  Quarterly
+}
+
+enum PlanStatus {
+  Draft
+  Active
+}
+
+enum LineStatus {
+  Achieved
+  Missed
+  Pending
+  NoTargetSet
+}
+
+model SalesTargetPlan {
+  id            String        @id @default(cuid())
+  name          String
+  dimensionType DimensionType
+  periodType    PeriodType
+  startDate     DateTime
+  endDate       DateTime
+  status        PlanStatus    @default(Draft)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  lines SalesTargetLine[]
+
+  @@unique([name, dimensionType, startDate, endDate])
+  @@index([status])
+  @@index([dimensionType])
+}
+
+model SalesTargetLine {
+  id     String          @id @default(cuid())
+  planId String
+  plan   SalesTargetPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  periodLabel String
+  periodStart DateTime
+  periodEnd   DateTime
+
+  // dimensionId is the business dimension code (e.g. "STR001"); it is the join key
+  // used against SalesActual.dimensionId during achievement calculation.
+  dimensionId   String
+  dimensionName String
+
+  targetValue    Float
+  actualValue    Float      @default(0)
+  achievementPct Float      @default(0)
+  status         LineStatus @default(Pending)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([planId, dimensionId, periodLabel])
+  @@index([planId])
+  @@index([status])
+}
