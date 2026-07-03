@@ -1,0 +1,22 @@
+node_modules
+/dist
+/coverage
+npm-debug.log
+
+# Environment variables
+.env
+.env.local
+
+# Generated Prisma client (regenerated via `npx prisma generate`)
+/generated/prisma
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+
+# OS
+.DS_Store
