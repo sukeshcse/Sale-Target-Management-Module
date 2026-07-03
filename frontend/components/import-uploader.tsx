@@ -114,17 +114,21 @@ export function ImportUploader({ planId, onImported }: { planId: string; onImpor
               </button>
               <button
                 onClick={handleConfirm}
-                disabled={preview.hasErrors || stage === 'confirming'}
-                className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                disabled={stage === 'confirming'}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50 ${
+                  preview.hasErrors ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
+                }`}
               >
-                {stage === 'confirming' ? 'Importing…' : 'Confirm Import'}
+                {stage === 'confirming' ? 'Importing…' : preview.hasErrors ? 'Confirm Anyway (will fail)' : 'Confirm Import'}
               </button>
             </div>
           </div>
 
           {preview.hasErrors && (
             <p className="text-sm text-red-600 mb-3">
-              Fix the row errors below and re-upload — an import is all-or-nothing, so no rows will be saved until every row is valid.
+              This file has row errors — the import is all-or-nothing, so confirming now will save nothing and show you
+              the same errors as a rejected-import report. Fix the rows below and re-upload, or confirm anyway to see
+              that report.
             </p>
           )}
 
@@ -166,8 +170,14 @@ export function ImportUploader({ planId, onImported }: { planId: string; onImpor
             <p className="font-medium mb-2">{result.status === 'Success' ? 'Import succeeded' : 'Import failed'}</p>
             <p>
               {result.totalRows} row{result.totalRows === 1 ? '' : 's'} total · {result.importedRows} imported ·{' '}
-              {result.failedRows} failed
+              {result.totalRows - result.importedRows - result.failedRows} skipped · {result.failedRows} failed
             </p>
+            {result.status === 'Failed' && result.failedRows < result.totalRows && (
+              <p className="mt-1 text-xs text-zinc-500">
+                Skipped rows were individually valid but weren&apos;t saved — the import is all-or-nothing, so nothing
+                persists until every row passes.
+              </p>
+            )}
             {result.errors.length > 0 && (
               <ul className="mt-2 list-disc list-inside text-red-600">
                 {result.errors.map((e) => (

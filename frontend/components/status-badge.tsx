@@ -7,10 +7,13 @@ const COLORS: Record<string, string> = {
   NoTargetSet: 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400',
 };
 
+// Spec calls this status "No Target Set"; the enum value has no spaces.
+const LABELS: Record<string, string> = { NoTargetSet: 'No Target Set' };
+
 export function StatusBadge({ status }: { status: string }) {
   return (
     <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${COLORS[status] ?? COLORS.Draft}`}>
-      {status}
+      {LABELS[status] ?? status}
     </span>
   );
 }
