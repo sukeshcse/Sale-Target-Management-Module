@@ -106,3 +106,17 @@ model TargetImportLog {
 
   @@index([planId])
 }
+
+model SalesActual {
+  id            String        @id @default(cuid())
+  dimensionType DimensionType
+  // Matches SalesTargetLine.dimensionId — the business dimension code (e.g. "STR001").
+  dimensionId   String
+  dimensionName String
+  saleDate      DateTime
+  saleAmount    Float
+
+  createdAt DateTime @default(now())
+
+  @@index([dimensionType, dimensionId, saleDate])
+}

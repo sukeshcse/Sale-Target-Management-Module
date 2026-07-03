@@ -5,12 +5,16 @@ import { endOfUtcDay, validatePeriodTypeSpan } from '../common/utils/period.util
 import { CreateTargetPlanDto } from './dto/create-target-plan.dto';
 import { UpdateTargetPlanDto } from './dto/update-target-plan.dto';
 import { QueryTargetPlansDto } from './dto/query-target-plans.dto';
+import { AchievementService } from '../achievement/achievement.service';
 
 const ALL_LINE_STATUSES: LineStatus[] = ['Achieved', 'Missed', 'Pending', 'NoTargetSet'];
 
 @Injectable()
 export class TargetPlansService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly achievementService: AchievementService,
+  ) {}
 
   async create(dto: CreateTargetPlanDto) {
     const startDate = new Date(dto.startDate);
@@ -148,7 +152,9 @@ export class TargetPlansService {
       throw new BadRequestException('Cannot activate a plan with no target lines');
     }
 
-    return this.prisma.salesTargetPlan.update({ where: { id }, data: { status: 'Active' } });
+    await this.prisma.salesTargetPlan.update({ where: { id }, data: { status: 'Active' } });
+    // Spec: achievement must be computed immediately on activation, not just left for the nightly cron.
+    return this.achievementService.calculateForPlan(id);
   }
 
   async getPlanOrThrow(id: string) {
