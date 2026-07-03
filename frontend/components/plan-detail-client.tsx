@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { apiGet, apiPatch } from '@/lib/api';
 import type { TargetPlanDetail } from '@/lib/types';
 import { StatusBadge } from '@/components/status-badge';
+import { ImportUploader } from '@/components/import-uploader';
 
 export function PlanDetailClient({ planId }: { planId: string }) {
   const [plan, setPlan] = useState<TargetPlanDetail | null>(null);
@@ -69,6 +70,10 @@ export function PlanDetailClient({ planId }: { planId: string }) {
       </div>
 
       {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
+
+      <div className="mb-6">
+        <ImportUploader planId={planId} onImported={refetch} />
+      </div>
 
       <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
         <table className="w-full text-sm">
