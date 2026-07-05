@@ -6,6 +6,7 @@ import { apiGet, apiPatch, apiPost } from '@/lib/api';
 import { LINE_STATUSES, type LineStatus, type TargetPlanDetail } from '@/lib/types';
 import { StatusBadge } from '@/components/status-badge';
 import { ImportUploader } from '@/components/import-uploader';
+import { SalesActualForm } from '@/components/sales-actual-form';
 import { SummaryDashboard } from '@/components/summary-dashboard';
 import { ProgressBar } from '@/components/progress-bar';
 import { Card } from '@/components/ui/card';
@@ -119,6 +120,10 @@ export function PlanDetailClient({ planId }: { planId: string }) {
 
       <div className="mb-6">
         <ImportUploader planId={planId} onImported={refetch} />
+      </div>
+
+      <div className="mb-6">
+        <SalesActualForm dimensionType={plan.dimensionType} />
       </div>
 
       <div className="flex items-center justify-between mb-3">

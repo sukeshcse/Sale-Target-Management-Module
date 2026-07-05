@@ -55,6 +55,16 @@ export interface PaginatedResult<T> {
   pageSize: number;
 }
 
+export interface SalesActual {
+  id: string;
+  dimensionType: DimensionType;
+  dimensionId: string;
+  dimensionName: string;
+  saleDate: string;
+  saleAmount: number;
+  createdAt: string;
+}
+
 export interface ApiError {
   message: string | string[];
   error: string;
