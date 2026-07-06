@@ -21,8 +21,10 @@ export function PlanDetailClient({ planId }: { planId: string }) {
   const [recalculating, setRecalculating] = useState(false);
   const [statusFilter, setStatusFilter] = useState<LineStatus | ''>('');
 
+  // No synchronous setState here: `loading` starts true and only gates the initial
+  // skeleton (loading && !plan), so refetches after activate/recalculate/import keep
+  // showing current data while the fresh response loads.
   const refetch = useCallback(() => {
-    setLoading(true);
     return apiGet<TargetPlanDetail>(`/target-plans/${planId}`)
       .then(setPlan)
       .catch((err) => setError(err instanceof Error ? err.message : 'Failed to load plan'))

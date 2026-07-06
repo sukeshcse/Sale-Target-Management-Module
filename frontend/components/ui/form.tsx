@@ -102,12 +102,10 @@ export function Select({
     return () => document.removeEventListener('mousedown', handlePointerDown);
   }, [open]);
 
+  // activeIndex is set in openList() at the moment of opening (event handler) rather
+  // than in this effect — the effect only handles the DOM focus side effect.
   useEffect(() => {
-    if (open) {
-      setActiveIndex(selectedIndex);
-      listRef.current?.focus();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (open) listRef.current?.focus();
   }, [open]);
 
   useEffect(() => {
@@ -115,6 +113,11 @@ export function Select({
     const el = listRef.current?.children[activeIndex] as HTMLElement | undefined;
     el?.scrollIntoView({ block: 'nearest' });
   }, [open, activeIndex]);
+
+  function openList() {
+    setActiveIndex(selectedIndex);
+    setOpen(true);
+  }
 
   function close(refocusButton: boolean) {
     setOpen(false);
@@ -144,7 +147,7 @@ export function Select({
     if (disabled) return;
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      setOpen(true);
+      openList();
       return;
     }
     if (handleTypeahead(e.key)) e.preventDefault();
@@ -195,7 +198,7 @@ export function Select({
         aria-expanded={open}
         aria-controls={listboxId}
         disabled={disabled}
-        onClick={() => !disabled && setOpen((o) => !o)}
+        onClick={() => !disabled && (open ? setOpen(false) : openList())}
         onKeyDown={onButtonKeyDown}
         className={`${FIELD_BASE} flex w-full cursor-pointer items-center justify-between gap-2 text-left disabled:cursor-not-allowed`}
       >

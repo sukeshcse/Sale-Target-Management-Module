@@ -30,27 +30,43 @@ function PageShell() {
 function PlansListInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [data, setData] = useState<PaginatedResult<TargetPlan> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Loading is derived (result for the current filter key hasn't arrived yet) instead of
+  // being set synchronously inside the effect — avoids cascading renders and, via the
+  // key check + cancellation flag, stale responses from superseded filter changes.
+  const [result, setResult] = useState<{
+    key: string;
+    data: PaginatedResult<TargetPlan> | null;
+    error: string | null;
+  } | null>(null);
 
   const status = searchParams.get('status') ?? '';
   const dimensionType = searchParams.get('dimensionType') ?? '';
   const periodType = searchParams.get('periodType') ?? '';
+  const filterKey = `${status}|${dimensionType}|${periodType}`;
 
   useEffect(() => {
+    let cancelled = false;
     const params = new URLSearchParams();
     if (status) params.set('status', status);
     if (dimensionType) params.set('dimensionType', dimensionType);
     if (periodType) params.set('periodType', periodType);
 
-    setLoading(true);
-    setError(null);
     apiGet<PaginatedResult<TargetPlan>>(`/target-plans?${params.toString()}`)
-      .then(setData)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [status, dimensionType, periodType]);
+      .then((data) => {
+        if (!cancelled) setResult({ key: filterKey, data, error: null });
+      })
+      .catch((err: Error) => {
+        if (!cancelled) setResult({ key: filterKey, data: null, error: err.message });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [status, dimensionType, periodType, filterKey]);
+
+  const current = result?.key === filterKey ? result : null;
+  const loading = !current;
+  const data = current?.data ?? null;
+  const error = current?.error ?? null;
 
   function updateFilter(key: string, value: string) {
     const params = new URLSearchParams(searchParams.toString());
